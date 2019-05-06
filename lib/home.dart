@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'model/products_repository.dart';
-import 'model/product.dart';
 import 'package:intl/intl.dart';
 import 'detail.dart';
 
@@ -25,7 +22,7 @@ class _HomePageState extends State<HomePage> {
         leading: IconButton(
           icon: Icon(Icons.person, color: Colors.white),
           onPressed: () {
-            Navigator.pushNamed(context, '/mypage');
+            Navigator.pushNamed(context, '/profile');
           }
         ),
         brightness: Brightness.light,
@@ -221,7 +218,7 @@ class Product{
       description = map['description'],
       imgurl = map['imgurl'],
       likes = map['likes'],
-      price = map['price'],
+      price = map['price'].toDouble(),
       uid = map['uid'],
       created = map['created'],
       modified = map['modified'];

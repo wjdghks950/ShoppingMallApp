@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'globals.dart' as globals;
+import 'auth.dart';
 import 'dart:io';
 
 class AddItem extends StatefulWidget{
@@ -13,7 +13,6 @@ class AddItem extends StatefulWidget{
 }
 
 class _ItemState extends State<AddItem>{
-  final String _defaultImgUrl = 'https://firebasestorage.googleapis.com/v0/b/mallapp-project.appspot.com/o/default_img.jpg?alt=media&token=64e2fd87-6655-421b-bfd4-bd247d197f6a';
   File _image;
   TextEditingController _nameController;
   TextEditingController _priceController;
@@ -33,7 +32,7 @@ class _ItemState extends State<AddItem>{
     _priceController = TextEditingController();
     _descriptionController = TextEditingController();
     _categoryController = TextEditingController();
-    globals.storage = FirebaseStorage.instance;
+    AuthService.storage = FirebaseStorage.instance;
   }
 
   Future _getImage() async{
@@ -56,7 +55,7 @@ class _ItemState extends State<AddItem>{
   }
 
   Future<String> _imgUploadUrl() async{
-    StorageReference ref = globals.storage.ref().child(_nameController.text);
+    StorageReference ref = AuthService.storage.ref().child(_nameController.text);
     StorageUploadTask upload;
     if (_image != null){
       upload = ref.putFile(_image);
@@ -66,7 +65,7 @@ class _ItemState extends State<AddItem>{
   }
 
   Future<void> _uploadData() async{
-    String imgurl = _isDefault ? _defaultImgUrl : await _imgUploadUrl();
+    String imgurl = _isDefault ? AuthService.defaultImgUrl : await _imgUploadUrl();
     Firestore.instance.collection('products').document(_nameController.text).setData({
       'name': _nameController.text,
       'imgurl': imgurl,
@@ -76,8 +75,8 @@ class _ItemState extends State<AddItem>{
       'modified': _modifiedTime,
       'likes': 0,
       'price': double.parse(_priceController.text),
-      'editor': globals.userID.displayName,
-      'uid' : globals.userID.uid,
+      'editor': AuthService.user.displayName,
+      'uid' : AuthService.user.uid,
     });
   }
 
@@ -124,7 +123,7 @@ class _ItemState extends State<AddItem>{
           width: MediaQuery.of(context).size.width,
           child: _isDefault ? FadeInImage.memoryNetwork(
               placeholder: kTransparentImage,
-              image: _defaultImgUrl,
+              image: AuthService.defaultImgUrl,
               width: MediaQuery.of(context).size.width,
               fit: BoxFit.fitWidth,
             ) : Image.file(_image, fit: BoxFit.fitWidth),
@@ -232,7 +231,7 @@ class _ItemState extends State<AddItem>{
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children:[
-                    Text('creator: ' + globals.userID.uid),
+                    Text('creator: ' + AuthService.user.uid),
                   ],
                 ),
                 Row(

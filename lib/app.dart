@@ -8,6 +8,7 @@ import 'search.dart';
 import 'mypage.dart';
 import 'ranking.dart';
 import 'item.dart';
+import 'profile.dart';
 
 class MallApp extends StatelessWidget {
   @override
@@ -25,6 +26,7 @@ class MallApp extends StatelessWidget {
         '/ranking': (context) => RankingPage(),
         '/mypage': (context) => MyPage(),
         '/item': (context) => AddItem(),
+        '/profile': (context) => ProfilePage(),
       },
       onGenerateRoute: _getRoute,
       theme: _kShrineTheme,

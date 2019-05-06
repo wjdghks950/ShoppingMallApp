@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'item.dart';
 import 'home.dart';
 import 'favoritemodel.dart';
-import 'globals.dart' as globals;
+import 'edit.dart';
+import 'auth.dart';
 
 class ProductDetail extends StatefulWidget{
   final Product product;
@@ -15,9 +16,50 @@ class ProductDetail extends StatefulWidget{
 }
 
 class _ProductState extends State<ProductDetail>{
+  bool _likes = false;
   final Product product;
-  bool _liked = false;
   _ProductState(this.product);
+
+  void _showDialog(){
+    showDialog(
+      context: context,
+      builder: (context){
+        return AlertDialog(
+          title: Text('Permission denied!'),
+          content: Text('Only the writer can edit this page'),
+        );
+      }
+    );
+  }
+
+  void _showInSnackBar(BuildContext context){
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: product.likes == 1 ? Text('You can only do it once!') : Text('I LIKE IT!'),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: (){
+            setState((){
+              Firestore.instance.runTransaction((transaction) async{
+                final freshSnapshot = await transaction.get(product.reference);
+                final fresh = Product.fromSnapshot(freshSnapshot);
+
+                await transaction.update(product.reference, {'likes': fresh.likes - 1});
+                }
+              );
+              if(_likes){
+                _likes = false;
+              }
+            });
+          },
+        )
+      )
+    );
+  }
+
+  Future<void> _delete(Product p) async{
+    return await Firestore.instance.collection('products').document(p.name).delete();
+  }
 
   @override
   Widget build(BuildContext context){
@@ -38,13 +80,19 @@ class _ProductState extends State<ProductDetail>{
           IconButton(
             icon: Icon(Icons.edit, color: Colors.white),
             onPressed: (){
-
+              if(AuthService.user.uid == product.uid){
+                Navigator.push(context, MaterialPageRoute(builder: (context) => EditPage(product: product)));
+              }
+              else{
+                _showDialog();
+              }
             }
           ),
           IconButton(
             icon: Icon(Icons.delete, color: Colors.white),
-            onPressed: (){
-
+            onPressed: () async {
+              AuthService.storage.ref().child(product.name).delete();
+              _delete(product);
             }
           )
         ],
@@ -83,12 +131,30 @@ class _ProductState extends State<ProductDetail>{
                               fontSize: 25.0,
                             ),
                           ),
+                          Spacer(),
                           IconButton(
-                            icon: Icon(Icons.thumb_up, color: _liked ? Colors.red : Colors.grey),
+                            icon: Icon(Icons.thumb_up, color: _likes ? Colors.red : Colors.grey),
                             onPressed: (){
+                              setState((){
+                                if(product.likes == 0){
+                                  Firestore.instance.runTransaction((transaction) async{
+                                    final freshSnapshot = await transaction.get(product.reference);
+                                    final fresh = Product.fromSnapshot(freshSnapshot);
 
-                            }
-                          )
+                                    await transaction.update(product.reference, {'likes': fresh.likes + 1});
+                                  }
+                                  );
+                                  if(!_likes){
+                                    _likes = true;
+                                  }
+                                }
+                                else{
+                                  _showInSnackBar(context);
+                                }
+                              });
+                            },
+                            tooltip: product.likes.toString(),
+                          ),
                         ],
                       ),
                     ),
@@ -128,7 +194,7 @@ class _ProductState extends State<ProductDetail>{
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children:[
-                    Text('creator: ' + globals.userID.uid),
+                    Text('creator: ' + AuthService.user.uid),
                   ],
                 ),
                 Row(

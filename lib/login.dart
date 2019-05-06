@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'colors.dart';
-import 'globals.dart' as globals;
+import 'auth.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,11 +13,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _success = false;
   String _uid;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<FirebaseUser> _handleSignIn() async{
-    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+  Future<FirebaseUser> _handleGoogleSignIn() async{
+    final GoogleSignInAccount googleUser = await AuthService.googleSignIn.signIn();
     final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
     if(googleUser == null){
@@ -30,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
       idToken: googleAuth.idToken,
     );
 
-    final FirebaseUser user = await _auth.signInWithCredential(credential);
+    final FirebaseUser user = await AuthService.auth.signInWithCredential(credential);
     assert(user.email != null);
     assert(user.displayName != null);
     assert(!user.isAnonymous);
@@ -41,13 +39,13 @@ class _LoginPageState extends State<LoginPage> {
     print(user.isAnonymous);
     print(user.getIdToken());
 
-    final FirebaseUser currentUser = await _auth.currentUser();
+    final FirebaseUser currentUser = await AuthService.auth.currentUser();
     assert(user.uid == currentUser.uid);
     setState((){
       if(user != null){
-        globals.userID = user;
         _success = true;
         _uid = user.uid;
+        AuthService.user = user;
         /* Firestore.instance.collection('accounts').document('google').setData({
           'email' : user.email,
           'photourl': user.photoUrl,
@@ -64,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<FirebaseUser> _handleAnonymous() async{
-    final FirebaseUser user = await _auth.signInAnonymously();
+    final FirebaseUser user = await AuthService.auth.signInAnonymously();
     assert(user != null);
     assert(user.isAnonymous);
     assert(!user.isEmailVerified);
@@ -79,13 +77,13 @@ class _LoginPageState extends State<LoginPage> {
       assert(user.providerData[0].uid != null);
     }
 
-    final FirebaseUser currentUser = await _auth.currentUser();
+    final FirebaseUser currentUser = await AuthService.auth.currentUser();
     assert(user.uid == currentUser.uid);
     setState((){
       if(user != null){
-        globals.userID = user;
         _success = true;
         _uid = user.uid;
+        AuthService.user = user;
         print('Successfully signed in as a guest [uid]: ' + _uid);
         Navigator.pop(context);
         /* Firestore.instance.collection('accounts').document('anonymous').setData({
@@ -157,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 onPressed: (){
-                  _handleSignIn().then((FirebaseUser user) => print(user)).catchError((e) => print(e)); //Pop up google sign in
+                  _handleGoogleSignIn().then((FirebaseUser user) => print(user)).catchError((e) => print(e)); //Pop up google sign in
                 },
               ),
             ),
