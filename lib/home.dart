@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'detail.dart';
+import 'auth.dart';
 
 class HomePage extends StatefulWidget{
   _HomePageState createState() => _HomePageState();
@@ -178,8 +179,10 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.blue[400],
                         ),
                       ),
-                      onPressed: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => ProductDetail(product: product))), // Product's index
+                      onPressed: () async{ 
+                        AuthService.currentSnapshot = await Firestore.instance.collection('products').document(product.docID).get();
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ProductDetail(product: product)));
+                       } // Product's index
                     ),
                   ),
               ],
@@ -201,9 +204,10 @@ class Product{
   final String uid;
   final DateTime created;
   final DateTime modified;
+  final String docID;
   final DocumentReference reference;
 
-  Product.fromMap(Map<String, dynamic> map,{this.reference})
+  Product.fromMap(Map<String, dynamic> map, String documentID, {this.reference})
     : assert(map['name'] != null),
       assert(map['category'] != null),
       assert(map['description'] != null),
@@ -221,10 +225,11 @@ class Product{
       price = map['price'].toDouble(),
       uid = map['uid'],
       created = map['created'],
-      modified = map['modified'];
+      modified = map['modified'],
+      docID = documentID;
 
   Product.fromSnapshot(DocumentSnapshot snapshot)
-    : this.fromMap(snapshot.data, reference: snapshot.reference);
+    : this.fromMap(snapshot.data, snapshot.documentID, reference: snapshot.reference);
 
   @override
   String toString() => "<Product name: $name - Category: $category - Price: $price>";
