@@ -16,8 +16,19 @@ class ProductDetail extends StatefulWidget{
 }
 
 class _ProductState extends State<ProductDetail>{
+  bool _like = false;
+  int like = 0;
   final Product product;
   _ProductState(this.product);
+
+  @override
+  void initState(){
+    if(AuthService.currentSnapshot.data['likes'] == 1){
+      _like = true;
+    }
+    like = AuthService.currentSnapshot.data['likes'];
+    super.initState();
+  }
 
   void _showDialog(){
     showDialog(
@@ -42,6 +53,10 @@ class _ProductState extends State<ProductDetail>{
           onPressed: (){
             setState((){
               Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] - 1});
+              _like = false;
+              if(like == 1){
+                like = AuthService.currentSnapshot.data['likes'] - 1;
+              }
             });
           },
         )
@@ -50,7 +65,7 @@ class _ProductState extends State<ProductDetail>{
   }
 
   Future<void> _delete(Product p) async{
-    await Firestore.instance.collection('products').document(p.docID).delete();
+    await product.reference.delete();
   }
 
   @override
@@ -83,8 +98,9 @@ class _ProductState extends State<ProductDetail>{
           IconButton(
             icon: Icon(Icons.delete, color: Colors.white),
             onPressed: () async {
-              AuthService.storage.ref().child(product.docID).delete();
+              AuthService.storage.ref().child(product.name).delete();
               _delete(product);
+              Navigator.of(context).pop();
             }
           )
         ],
@@ -106,7 +122,7 @@ class _ProductState extends State<ProductDetail>{
                     Padding(
                       padding: EdgeInsets.only(top:10.0),
                       child: Text(
-                        product.category,
+                        AuthService.currentSnapshot.data['category'],
                         style: TextStyle(
                           color: Colors.blueGrey,
                           fontWeight: FontWeight.bold,
@@ -118,7 +134,7 @@ class _ProductState extends State<ProductDetail>{
                       child: Row(
                         children: [
                           Text(
-                            product.name,
+                            AuthService.currentSnapshot.data['name'],
                             style: TextStyle(
                               color: Colors.blue[800],
                               fontWeight: FontWeight.bold,
@@ -127,20 +143,25 @@ class _ProductState extends State<ProductDetail>{
                           ),
                           Spacer(),
                           IconButton(
-                            icon: Icon(Icons.thumb_up, color: AuthService.currentSnapshot.data['likes'] == 1 ? Colors.red : Colors.grey),
+                            icon: Icon(Icons.thumb_up, color: _like ? Colors.red : Colors.grey),
                             onPressed: () async{
                               AuthService.currentSnapshot = await Firestore.instance.collection('products').document(product.docID).get();
                               setState((){
-                                print('Before like: ' + AuthService.currentSnapshot.data['likes'].toString());
                                 if(AuthService.currentSnapshot.data['likes'] < 1){
                                   Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] + 1});
-                                  print('After like: ' + AuthService.currentSnapshot.data['likes'].toString());
+                                  _like = true;
+                                  like = AuthService.currentSnapshot.data['likes'] + 1;
+                                  _showInSnackBar(context);
                                 }
                                 else if(AuthService.currentSnapshot.data['likes'] == 1){
                                   _showInSnackBar(context);
                                 }
                               });
                             },
+                          ),
+                          Text(
+                            like.toString(),
+                            style: TextStyle(color: Colors.black),
                           ),
                         ],
                       ),
@@ -151,7 +172,7 @@ class _ProductState extends State<ProductDetail>{
               Padding(
                 padding:EdgeInsets.symmetric(vertical: 10.0,horizontal: 20.0),
                 child: Text(
-                    product == null ? '' : formatter.format(product.price).toString(),
+                    product == null ? '' : formatter.format(AuthService.currentSnapshot.data['price']).toString(),
                     style: TextStyle(
                       color: Colors.blue[600],
                       fontSize: 20.0,
@@ -166,7 +187,7 @@ class _ProductState extends State<ProductDetail>{
                 padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
                 child:
                   Text(
-                    product == null ? '' : product.description,
+                    product == null ? '' : AuthService.currentSnapshot.data['description'],
                     style: TextStyle(
                       color: Colors.blue[600],
                       fontSize: 13.0,
