@@ -169,7 +169,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.end, 
               children: [
                 SizedBox(
-                  width: 58.0,
+                  width: 60.0,
                   height: 20.0,
                   child: FlatButton(
                       child: Text('more',
