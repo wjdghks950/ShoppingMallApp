@@ -123,6 +123,7 @@ class _EditState extends State<EditPage>{
             onPressed: () { // put async here if we are going to _uploadData()
               setState(() async{
                 await _uploadData();
+                AuthService.currentSnapshot = await Firestore.instance.collection('products').document(widget.product.docID).get();
                 Navigator.pop(context); // Return to the list of items page (HomePage) after uploading
               });
             },
