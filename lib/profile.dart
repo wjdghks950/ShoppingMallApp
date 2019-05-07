@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'auth.dart';
 
 class ProfilePage extends StatefulWidget{
@@ -8,10 +7,14 @@ class ProfilePage extends StatefulWidget{
 
 class _ProfileState extends State<ProfilePage>{
 
-  Future<GoogleSignInAccount> _signout() async{
-    await AuthService.auth.signOut();
-    await AuthService.googleSignIn.signOut();
-    return await AuthService.googleSignIn.disconnect();
+  void _signout() async{
+    if(AuthService.user.isAnonymous){
+      await AuthService.auth.signOut();
+    }
+    else if(AuthService.user.isEmailVerified){
+      await AuthService.googleSignIn.signOut();
+      await AuthService.googleSignIn.disconnect();
+    }
   }
 
   @override
@@ -33,7 +36,7 @@ class _ProfileState extends State<ProfilePage>{
             onPressed: (){
               _signout();
               print(AuthService.user.toString() + ' signed out successfully');
-              Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+              Navigator.of(context).pushNamedAndRemoveUntil('/mallmain', (Route<dynamic> route) => false);
             },
           ),
         ]

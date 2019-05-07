@@ -27,6 +27,7 @@ class MallApp extends StatelessWidget {
         '/mypage': (context) => MyPage(),
         '/item': (context) => AddItem(),
         '/profile': (context) => ProfilePage(),
+        '/mallmain':(context) => MallApp(),
       },
       onGenerateRoute: _getRoute,
       theme: _kShrineTheme,
