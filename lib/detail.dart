@@ -92,6 +92,9 @@ class _ProductState extends State<ProductDetail>{
                     _showInSnackBar(context, p, 'You can only do it once!');
                   }
                 }
+                else{
+                  _showDialog();
+                }
               },
             ),
             Text(
@@ -136,8 +139,13 @@ class _ProductState extends State<ProductDetail>{
           IconButton(
             icon: Icon(Icons.delete, color: Colors.white),
             onPressed: () async {
-              AuthService.storage.ref().child(product.name).delete();
-              _delete(product);
+              //AuthService.storage.ref().child(product.name).delete();
+              if(AuthService.user.uid == product.uid){
+                _delete(product);
+              }
+              else{
+                _showDialog();
+              }
               Navigator.of(context).pop();
             }
           )
