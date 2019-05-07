@@ -42,26 +42,64 @@ class _ProductState extends State<ProductDetail>{
     );
   }
 
-  void _showInSnackBar(BuildContext context){
+  void _showInSnackBar(BuildContext context, Product p, String message){
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: AuthService.currentSnapshot.data['likes'] == 1 ? Text('You can only do it once!') : Text('I LIKE IT!'),
+        content: Text(message),
         duration: Duration(seconds: 1),
         action: SnackBarAction(
           label: 'UNDO',
           textColor: Colors.blue,
-          onPressed: (){
+          onPressed: () async{
             setState((){
-              Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] - 1});
-              _like = false;
-              if(like == 1){
-                like = AuthService.currentSnapshot.data['likes'] - 1;
+              if(p.likes == 1){
+                p.reference.updateData({'likes': p.likes-1});
               }
             });
           },
         )
       )
     );
+  }
+
+  Widget _buildBody(BuildContext context){
+    return StreamBuilder<DocumentSnapshot>(
+      stream: Firestore.instance.collection('products').document(product.docID).snapshots(),
+      builder: (context, snapshot){
+        if(!snapshot.hasData){
+          return LinearProgressIndicator();
+        }
+        return _buildButton(context, snapshot.data);
+      },
+    );
+  }
+
+  Widget _buildButton(BuildContext context, DocumentSnapshot snapshot){
+    final p = Product.fromSnapshot(snapshot);
+    return Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.thumb_up, color: p.likes == 1 ? Colors.red : Colors.grey),
+              onPressed: (){
+                if(AuthService.user.uid == p.uid){
+                  if(p.likes == 0){
+                    p.reference.updateData({
+                      'likes': p.likes + 1,
+                    });
+                    _showInSnackBar(context, p, 'I LIKE IT!');
+                  }
+                  else if(p.likes == 1){
+                    _showInSnackBar(context, p, 'You can only do it once!');
+                  }
+                }
+              },
+            ),
+            Text(
+              p.likes.toString(),
+              style: TextStyle(color: Colors.black),
+            ),
+          ],
+        );
   }
 
   Future<void> _delete(Product p) async{
@@ -142,27 +180,7 @@ class _ProductState extends State<ProductDetail>{
                             ),
                           ),
                           Spacer(),
-                          IconButton(
-                            icon: Icon(Icons.thumb_up, color: _like ? Colors.red : Colors.grey),
-                            onPressed: () async{
-                              AuthService.currentSnapshot = await Firestore.instance.collection('products').document(product.docID).get();
-                              setState((){
-                                if(AuthService.currentSnapshot.data['likes'] < 1){
-                                  Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] + 1});
-                                  _like = true;
-                                  like = AuthService.currentSnapshot.data['likes'] + 1;
-                                  _showInSnackBar(context);
-                                }
-                                else if(AuthService.currentSnapshot.data['likes'] == 1){
-                                  _showInSnackBar(context);
-                                }
-                              });
-                            },
-                          ),
-                          Text(
-                            like.toString(),
-                            style: TextStyle(color: Colors.black),
-                          ),
+                          _buildBody(context),
                         ],
                       ),
                     ),
