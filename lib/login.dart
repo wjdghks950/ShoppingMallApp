@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'colors.dart';
 import 'auth.dart';
 
@@ -46,11 +47,11 @@ class _LoginPageState extends State<LoginPage> {
         _success = true;
         _uid = user.uid;
         AuthService.user = user;
-        /* Firestore.instance.collection('accounts').document('google').setData({
+        Firestore.instance.collection('accounts').document('google').setData({
           'email' : user.email,
           'photourl': user.photoUrl,
           'displayName' : user.displayName,
-        }); */
+        });
         Navigator.pop(context);
       }
       else{
@@ -86,11 +87,11 @@ class _LoginPageState extends State<LoginPage> {
         AuthService.user = user;
         print('Successfully signed in as a guest [uid]: ' + _uid);
         Navigator.pop(context);
-        /* Firestore.instance.collection('accounts').document('anonymous').setData({
+        Firestore.instance.collection('accounts').document('anonymous').setData({
             'uid' : user.email,
             'isAnonymous': user.isAnonymous,
             'displayName' : user.displayName,
-        }); */
+        });
       }
       else{
         _success = false;
