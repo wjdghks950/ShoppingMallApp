@@ -16,7 +16,6 @@ class ProductDetail extends StatefulWidget{
 }
 
 class _ProductState extends State<ProductDetail>{
-  bool _likes = false;
   final Product product;
   _ProductState(this.product);
 
@@ -35,21 +34,14 @@ class _ProductState extends State<ProductDetail>{
   void _showInSnackBar(BuildContext context){
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: product.likes == 1 ? Text('You can only do it once!') : Text('I LIKE IT!'),
+        content: AuthService.currentSnapshot.data['likes'] == 1 ? Text('You can only do it once!') : Text('I LIKE IT!'),
+        duration: Duration(seconds: 1),
         action: SnackBarAction(
           label: 'UNDO',
+          textColor: Colors.blue,
           onPressed: (){
             setState((){
-              Firestore.instance.runTransaction((transaction) async{
-                final freshSnapshot = await transaction.get(product.reference);
-                final fresh = Product.fromSnapshot(freshSnapshot);
-
-                await transaction.update(product.reference, {'likes': fresh.likes - 1});
-                }
-              );
-              if(_likes){
-                _likes = false;
-              }
+              Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] - 1});
             });
           },
         )
@@ -58,7 +50,7 @@ class _ProductState extends State<ProductDetail>{
   }
 
   Future<void> _delete(Product p) async{
-    return await Firestore.instance.collection('products').document(p.name).delete();
+    await Firestore.instance.collection('products').document(p.docID).delete();
   }
 
   @override
@@ -91,13 +83,15 @@ class _ProductState extends State<ProductDetail>{
           IconButton(
             icon: Icon(Icons.delete, color: Colors.white),
             onPressed: () async {
-              AuthService.storage.ref().child(product.name).delete();
+              AuthService.storage.ref().child(product.docID).delete();
               _delete(product);
             }
           )
         ],
       ),
-      body: ListView(
+      body: Builder(
+        builder: (context) => 
+          ListView(
             children:[
               Image.network(
                 product.imgurl,
@@ -133,27 +127,20 @@ class _ProductState extends State<ProductDetail>{
                           ),
                           Spacer(),
                           IconButton(
-                            icon: Icon(Icons.thumb_up, color: _likes ? Colors.red : Colors.grey),
-                            onPressed: (){
+                            icon: Icon(Icons.thumb_up, color: AuthService.currentSnapshot.data['likes'] == 1 ? Colors.red : Colors.grey),
+                            onPressed: () async{
+                              AuthService.currentSnapshot = await Firestore.instance.collection('products').document(product.docID).get();
                               setState((){
-                                if(product.likes == 0){
-                                  Firestore.instance.runTransaction((transaction) async{
-                                    final freshSnapshot = await transaction.get(product.reference);
-                                    final fresh = Product.fromSnapshot(freshSnapshot);
-
-                                    await transaction.update(product.reference, {'likes': fresh.likes + 1});
-                                  }
-                                  );
-                                  if(!_likes){
-                                    _likes = true;
-                                  }
+                                print('Before like: ' + AuthService.currentSnapshot.data['likes'].toString());
+                                if(AuthService.currentSnapshot.data['likes'] < 1){
+                                  Firestore.instance.collection('products').document(product.docID).updateData({'likes': AuthService.currentSnapshot.data['likes'] + 1});
+                                  print('After like: ' + AuthService.currentSnapshot.data['likes'].toString());
                                 }
-                                else{
+                                else if(AuthService.currentSnapshot.data['likes'] == 1){
                                   _showInSnackBar(context);
                                 }
                               });
                             },
-                            tooltip: product.likes.toString(),
                           ),
                         ],
                       ),
@@ -224,6 +211,7 @@ class _ProductState extends State<ProductDetail>{
           ),
             ],
         ),
+      ),
     );
   }
   Widget _checkFavorite(product){ // Returns the IconButton widget for details page and stores each product in saved list.
