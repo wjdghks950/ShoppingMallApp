@@ -16,17 +16,11 @@ class ProductDetail extends StatefulWidget{
 }
 
 class _ProductState extends State<ProductDetail>{
-  bool _like = false;
-  int like = 0;
   final Product product;
   _ProductState(this.product);
 
   @override
   void initState(){
-    if(AuthService.currentSnapshot.data['likes'] == 1){
-      _like = true;
-    }
-    like = AuthService.currentSnapshot.data['likes'];
     super.initState();
   }
 
@@ -51,6 +45,7 @@ class _ProductState extends State<ProductDetail>{
           label: 'UNDO',
           textColor: Colors.blue,
           onPressed: () async{
+            int like = p.likes;
             setState((){
               if(p.likes == 1){
                 p.reference.updateData({'likes': p.likes-1});
