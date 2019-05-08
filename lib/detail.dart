@@ -39,16 +39,17 @@ class _ProductState extends State<ProductDetail>{
   void _showInSnackBar(BuildContext context, Product p, String message){
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        duration: Duration(seconds: 1),
+        content: Text(message + ' ' + p.likes.toString()),
+        duration: Duration(milliseconds: 3000),
         action: SnackBarAction(
           label: 'UNDO',
           textColor: Colors.blue,
           onPressed: () async{
-            int like = p.likes;
+            QuerySnapshot query = await Firestore.instance.collection('products').getDocuments();
+            DocumentSnapshot snapshot = query.documents.singleWhere((snap) => snap.documentID == p.docID);           
             setState((){
-              if(p.likes == 1){
-                p.reference.updateData({'likes': p.likes-1});
+              if(snapshot.data['likes'] == 1){
+                p.reference.updateData({'likes': snapshot.data['likes']-1});
               }
             });
           },
