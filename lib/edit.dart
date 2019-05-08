@@ -63,31 +63,14 @@ class _EditState extends State<EditPage>{
 
   Future<void> _uploadData() async{
     String imgurl = _isDefault ? widget.product.imgurl : await _imgUploadUrl();
-    if(widget.product.name == _nameController.text){
-      Firestore.instance.collection('products').document(widget.product.name).updateData({
-        'name': _nameController.text,
-        'imgurl': imgurl,
-        'category': _categoryController.text.toLowerCase(),
-        'description': _descriptionController.text,
-        'modified': _modifiedTime,
-        'price': double.parse(_priceController.text),
-      });
-    }
-    else{
-      Firestore.instance.collection('products').document(_nameController.text).setData({
-        'name': _nameController.text,
-        'imgurl': imgurl,
-        'category': _categoryController.text.toLowerCase(),
-        'description': _descriptionController.text,
-        'created': widget.product.created,
-        'modified': _modifiedTime,
-        'likes': 0,
-        'price': double.parse(_priceController.text),
-        'editor': AuthService.user.displayName,
-        'uid' : AuthService.user.uid,
-      });
-      await Firestore.instance.collection('products').document(widget.product.name).delete();
-    }
+    Firestore.instance.collection('products').document(widget.product.name).updateData({
+      'name': _nameController.text,
+      'imgurl': imgurl,
+      'category': _categoryController.text.toLowerCase(),
+      'description': _descriptionController.text,
+      'modified': _modifiedTime,
+      'price': double.parse(_priceController.text),
+    });
   }
 
   @override
@@ -124,6 +107,7 @@ class _EditState extends State<EditPage>{
               setState(() async{
                 await _uploadData();
                 AuthService.currentSnapshot = await Firestore.instance.collection('products').document(widget.product.docID).get();
+                print('Category: ' + _categoryController.text);
                 Navigator.pop(context); // Return to the list of items page (HomePage) after uploading
               });
             },
