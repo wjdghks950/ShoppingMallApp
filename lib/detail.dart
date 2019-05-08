@@ -39,8 +39,8 @@ class _ProductState extends State<ProductDetail>{
   void _showInSnackBar(BuildContext context, Product p, String message){
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: Text(message + ' ' + p.likes.toString()),
-        duration: Duration(milliseconds: 3000),
+        content: Text(message),
+        duration: Duration(milliseconds: 2000),
         action: SnackBarAction(
           label: 'UNDO',
           textColor: Colors.blue,
@@ -138,11 +138,11 @@ class _ProductState extends State<ProductDetail>{
               //AuthService.storage.ref().child(product.name).delete();
               if(AuthService.user.uid == product.uid){
                 _delete(product);
+                Navigator.of(context).pop();
               }
               else{
                 _showDialog();
               }
-              Navigator.of(context).pop();
             }
           )
         ],
